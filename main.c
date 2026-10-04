@@ -71,6 +71,7 @@ typedef struct {
 typedef struct {
     TipoElemento elemento_alvo;
     Comando comando;
+    int dano_sofrido;
 } ContextoAcao;
 
 typedef struct {
@@ -189,6 +190,11 @@ void imprime_cenario(Jogo jogo) {
   printf("\n");
   if (jogo.contexto.elemento_alvo == PORTAO) {
     printf("Determinação: %d\n\n", jogo.estado.determinacao);
+  } else if (jogo.contexto.dano_sofrido > 0) {
+    printf(
+        VERMELHO "Dano sofrido: -%d" RESET "\n",
+        jogo.contexto.dano_sofrido
+    );
   }
 
   for (int i=0; i < jogo.cenario_atual->linhas; i++) {
@@ -331,6 +337,7 @@ Jogo inicia_o_jogo() {
 
   ContextoAcao contexto = {
     .elemento_alvo = VAZIO,
+    .dano_sofrido = 0
   };
 
   // Cria a primeira sala
@@ -514,13 +521,17 @@ void lidar_comando(Jogo *jogo) {
   }
 }
 
-void combater_caminhante(EstadoJogo *estado) {
+void combater_caminhante(EstadoJogo *estado, ContextoAcao *contexto) {
+  int dano = 0;
+
   if (estado->obsidiana > 0) {
     estado->obsidiana -= 1;
-    estado->vida -= 5;
+    dano = 5;
   } else {
-    estado->vida -= 25;
+    dano = 25;
   }
+  estado->vida -= dano;
+  contexto->dano_sofrido = dano;
 }
 
 void recuperar_vida(EstadoJogo *estado) {
@@ -531,24 +542,26 @@ void recuperar_vida(EstadoJogo *estado) {
   }
 }
 
-void aplicar_efeito_elemento(EstadoJogo *estado, ContextoAcao contexto) {
-  switch (contexto.elemento_alvo) {
+void aplicar_efeito_elemento(EstadoJogo *estado, ContextoAcao *contexto) {
+  switch (contexto->elemento_alvo) {
 
     case CAMINHANTE_BRANCO:
-      combater_caminhante(estado);
-      break;
+      combater_caminhante(estado, contexto);
+      return;
 
     case VIDRO_DRAGAO:
       estado->obsidiana += 1;
-      break;
+      return;
 
     case FOGUEIRA:
       recuperar_vida(estado);
-      break;
+      return;
     
     default:
-      break;
+      break;;
   }
+
+  contexto->dano_sofrido = 0;
 }
 
 void processa_a_rodada(Jogo *jogo) {
@@ -587,15 +600,15 @@ int main() {
   Jogo jogo = inicia_o_jogo();
   jogo.cenario_atual = &jogo.castelo_negro;
 
+  imprime_cenario(jogo);
   while (!jogo.estado.fim) {
-    imprime_cenario(jogo);
-
     jogo.contexto.comando = capturar_tecla();
 
     lidar_comando(&jogo);
-    aplicar_efeito_elemento(&jogo.estado, jogo.contexto);
+    aplicar_efeito_elemento(&jogo.estado, &jogo.contexto);
 
     processa_a_rodada(&jogo);
+    imprime_cenario(jogo);
   }
 
   if (jogo.estado.venceu) {
