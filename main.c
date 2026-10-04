@@ -116,40 +116,50 @@ typedef struct {
     }
 #endif
 
-char tipo_para_char(TipoElemento tipo) {
+#define RESET   "\033[0m"
+#define VERMELHO "\033[31m"
+#define VERDE    "\033[32m"
+#define AMARELO  "\033[33m"
+#define AZUL     "\033[34m"
+#define MAGENTA  "\033[35m"
+#define CIANO    "\033[36m"
+#define BRANCO   "\033[97m"
+#define CINZA    "\033[90m"
+
+const char *tipo_para_simbolo(TipoElemento tipo) {
   switch (tipo) {
     case VAZIO:
-      return '.';
+      return CINZA "·" RESET;
 
     case JOGADOR:
-      return 'J';
-
-    case PORTAO:
-      return 'P';
-
-    case ARVORE:
-      return 'A';
-
-    case ROCHA:
-      return 'R';
-
-    case CABANA_SELVAGEM:
-      return 'C';
-
-    case VIDRO_DRAGAO:
-      return 'V';
-
-    case FOGUEIRA:
-      return 'F';
+      return AZUL "♞" RESET;
 
     case BRAN:
-      return 'B';
+      return CIANO "♟" RESET;
+
+    case PORTAO:
+      return AMARELO "▣" RESET;
+
+    case ARVORE:
+      return VERDE "♣" RESET;
+
+    case ROCHA:
+      return CINZA "◆" RESET;
+
+    case CABANA_SELVAGEM:
+      return AMARELO "⌂" RESET;
+
+    case VIDRO_DRAGAO:
+      return MAGENTA "♦" RESET;
+
+    case FOGUEIRA:
+      return VERMELHO "♨" RESET;
 
     case CAMINHANTE_BRANCO:
-      return '.';
+      return CINZA "." RESET;
 
     default:
-      return '?';
+      return "?";
   }
 }
 
@@ -157,9 +167,9 @@ void imprime_linha(TipoElemento* linha, int tamanho) {
   printf("| ");
   for (int i=0; i < tamanho; i++) {
     if (i != tamanho - 1) {
-      printf("%c  ", tipo_para_char(linha[i]));
+      printf("%s  ", tipo_para_simbolo(linha[i]));
     } else {
-      printf("%c", tipo_para_char(linha[i]));
+      printf("%s", tipo_para_simbolo(linha[i]));
     }
   }
   printf(" |");
