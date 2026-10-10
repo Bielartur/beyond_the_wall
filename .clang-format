@@ -9,3 +9,5 @@ ContinuationIndentWidth: 2
 Cpp11BracedListStyle: FunctionCall
 BracedInitializerIndentWidth: 2
 BreakBeforeCloseBracketBracedList: true
+SortIncludes: Never
+IndentPPDirectives: Leave

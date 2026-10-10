@@ -50,11 +50,11 @@ const char *tipo_para_simbolo(const TipoElemento *tipo) {
 }
 
 void limpar_terminal() {
-#ifdef _WIN32
-  system("cls");
-#else
-  system("clear");
-#endif
+  #ifdef _WIN32
+    system("cls");
+  #else
+    system("clear");
+  #endif
 }
 
 void imprime_linha(const TipoElemento **linha, int tamanho) {

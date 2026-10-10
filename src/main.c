@@ -1,6 +1,6 @@
-#include "./factory/factory.h"
 #include "./input/input.h"
 #include "./interface/interface.h"
+#include "./factory/factory.h"
 #include "./types/types.h"
 #include <stdlib.h>
 #include <time.h>
@@ -169,7 +169,7 @@ void inicia_o_jogo(Jogo *jogo) {
     .determinacao = 0,
     .obsidiana = 0,
     .venceu = 0,
-    .fim = 0
+    .fim = 0,
   };
 
   ContextoAcao contexto = {
@@ -188,13 +188,13 @@ void inicia_o_jogo(Jogo *jogo) {
   coloca_portao_no_cenario(&portao1, &castelo_negro);
 
   Elemento bran = cria_elemento(BRAN, NULL);
-
+  
   jogo->estado = estado;
   jogo->contexto = contexto;
   jogo->castelo_negro = castelo_negro;
   jogo->jon = jon;
   jogo->bran = bran;
-
+  
   coloca_elemento_no_cenario(&jogo->jon, &jogo->castelo_negro);
 
   Cenario alem_da_muralha = cria_alem_da_muralha(&jogo->bran, &jogo->castelo_negro);
