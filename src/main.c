@@ -1,3 +1,4 @@
+#include "./factory/factory.h"
 #include "./input/input.h"
 #include "./interface/interface.h"
 #include "./types/types.h"
@@ -40,7 +41,7 @@ Posicao gera_posicao_aleatoria(Cenario cenario) {
   do {
     posicao.linha = (rand() % cenario.linhas);   // Já exclui o último elemento, então vai estar sempre em um espaço válido
     posicao.coluna = (rand() % cenario.colunas); // (se a entrada estiver correta)
-  } while (cenario.matriz[posicao.linha][posicao.coluna] != VAZIO); // Só retorna posições disponíveis
+  } while (*cenario.matriz[posicao.linha][posicao.coluna] != VAZIO); // Só retorna posições disponíveis
 
   return posicao;
 }
@@ -59,27 +60,32 @@ Posicao gera_posicao_na_borda(Cenario cenario) {
       posicao.coluna = rand() % cenario.colunas;
       posicao.linha = no_final ? cenario.linhas - 1 : 0;
     }
-  } while (cenario.matriz[posicao.linha][posicao.coluna] != VAZIO);
+  } while (*cenario.matriz[posicao.linha][posicao.coluna] != VAZIO);
 
   return posicao;
 }
 
-void coloca_elemento_no_cenario(Elemento elemento, Cenario *cenario) {
-  TipoElemento elemento_abaixo = cenario->matriz[elemento.posicao.linha][elemento.posicao.coluna];
+// O elemento deve ter endereço persistente, pois a matriz guarda seu ponteiro.
+void coloca_elemento_no_cenario(Elemento *elemento, Cenario *cenario) {
+  const TipoElemento *elemento_abaixo = cenario->matriz[elemento->posicao.linha][elemento->posicao.coluna];
 
-  if (elemento_abaixo == PORTAO) {
+  if (*elemento_abaixo == PORTAO) {
     // Guarda só se for o portão
-    elemento.elemento_abaixo = elemento_abaixo;
+    elemento->elemento_abaixo = elemento_abaixo;
   }
-  cenario->matriz[elemento.posicao.linha][elemento.posicao.coluna] = elemento.tipo;
+  // Preserva a referência original para permitir casts para tipos específicos
+  cenario->matriz[elemento->posicao.linha][elemento->posicao.coluna] = &elemento->tipo;
 }
 
-// A diferença entre um tipo e um elemento é que o elemento é movel e o tipo não
-void coloca_tipo_no_cenario(Posicao posicao, TipoElemento tipo, Cenario *cenario) {
+// Tipos identificam o conteúdo da célula; elementos possuem estado e podem se mover.
+int coloca_tipo_no_cenario(Posicao posicao, const TipoElemento *tipo, Cenario *cenario) {
+  if (*tipo == PORTAO) return EXIT_FAILURE;
+
   cenario->matriz[posicao.linha][posicao.coluna] = tipo;
+  return EXIT_SUCCESS;
 }
 
-void gera_elementos_no_cenario(TipoElemento tipo, int qtd_elementos, Cenario *cenario) {
+void distribui_tipos_no_cenario(const TipoElemento *tipo, int qtd_elementos, Cenario *cenario) {
   for (int i = 0; i < qtd_elementos; i++) {
     Posicao posicao_aleatoria = gera_posicao_aleatoria(*cenario);
     coloca_tipo_no_cenario(posicao_aleatoria, tipo, cenario);
@@ -124,11 +130,38 @@ void gera_caminhantes_ao_redor(Cenario *cenario, Posicao centro, int qtd_caminha
 
   for (int i = 0; i < qtd_caminhantes; i++) {
     int sorteio_posicao = rand() % quantidade;
-    coloca_tipo_no_cenario(posicoes_disponiveis[sorteio_posicao], CAMINHANTE_BRANCO, cenario);
+    coloca_tipo_no_cenario(posicoes_disponiveis[sorteio_posicao], &TIPO_CAMINHANTE_BRANCO, cenario);
   }
 }
 
-Jogo inicia_o_jogo() {
+void coloca_portao_no_cenario(Portao *portao, Cenario *cenario) {
+  cenario->matriz[portao->posicao.linha][portao->posicao.coluna] = &portao->tipo;
+}
+
+Cenario cria_alem_da_muralha(Elemento *bran, Cenario *castelo_negro) {
+  Cenario alem_da_muralha = cria_cenario(10, 10, ALEM_DA_MURALHA);
+
+  Posicao posicao_portao = gera_posicao_na_borda(alem_da_muralha);
+
+  // O destino será definido na main, após o cenário estar em seu endereço definitivo.
+  Portao portao = cria_portao(posicao_portao, NULL);
+  coloca_portao_no_cenario(&portao, castelo_negro);
+
+  // jon->posicao = posicao_portao;
+  // coloca_elemento_no_cenario(*jon, &alem_da_muralha);
+  bran->posicao = gera_posicao_aleatoria(alem_da_muralha);
+
+  distribui_tipos_no_cenario(&TIPO_ARVORE, QTD_ARVORES, &alem_da_muralha);
+  distribui_tipos_no_cenario(&TIPO_ROCHA, QTD_ROCHAS, &alem_da_muralha);
+  distribui_tipos_no_cenario(&TIPO_CABANA_SELVAGEM, QTD_CABANAS_SELVAGENS, &alem_da_muralha);
+  distribui_tipos_no_cenario(&TIPO_CAMINHANTE_BRANCO, QTD_CAMINHANTES_BRANCOS, &alem_da_muralha);
+  distribui_tipos_no_cenario(&TIPO_FOGUEIRA, QTD_FOGUEIRAS, &alem_da_muralha);
+  distribui_tipos_no_cenario(&TIPO_VIDRO_DRAGAO, QTD_VIDROS_DRAGAO, &alem_da_muralha);
+
+  return alem_da_muralha;
+}
+
+void inicia_o_jogo(Jogo *jogo) {
   EstadoJogo estado = {
     .rodada = 1,
     .tem_bran = 0,
@@ -140,69 +173,38 @@ Jogo inicia_o_jogo() {
   };
 
   ContextoAcao contexto = {
-    .elemento_alvo = VAZIO,
-    .dano_sofrido = 0
+    .elemento_alvo = &TIPO_VAZIO,
+    .dano_sofrido = 0,
   };
 
   // Cria a primeira sala
-  Cenario sala1 = {
-    .linhas = 3,
-    .colunas = 3,
-    .etapa = CASTELO_NEGRO
-  };
+  Cenario castelo_negro = cria_cenario(3, 3, CASTELO_NEGRO);
 
-  // Cria o array que vai guardar as posições de Jon
-  Elemento jon = {
-    .tipo = JOGADOR,
-    .posicao = gera_posicao_aleatoria(sala1)
-  };
-  coloca_elemento_no_cenario(jon, &sala1);
+  Posicao posicao_aleatoria = gera_posicao_aleatoria(castelo_negro);
+  // Cria o elemento que representa Jon
+  Elemento jon = cria_elemento(JOGADOR, &posicao_aleatoria);
 
-  gera_elementos_no_cenario(PORTAO, 1, &sala1);
+  Portao portao1 = cria_portao(gera_posicao_aleatoria(castelo_negro), &jogo->alem_da_muralha);
+  coloca_portao_no_cenario(&portao1, &castelo_negro);
 
-  Jogo jogo = {
-    .estado = estado,
-    .contexto = contexto,
-    .castelo_negro = sala1,
-    .jon = jon,
-  };
+  Elemento bran = cria_elemento(BRAN, NULL);
 
-  return jogo;
+  jogo->estado = estado;
+  jogo->contexto = contexto;
+  jogo->castelo_negro = castelo_negro;
+  jogo->jon = jon;
+  jogo->bran = bran;
+
+  coloca_elemento_no_cenario(&jogo->jon, &jogo->castelo_negro);
+
+  Cenario alem_da_muralha = cria_alem_da_muralha(&jogo->bran, &jogo->castelo_negro);
+  jogo->alem_da_muralha = alem_da_muralha;
+  jogo->cenario_atual = &jogo->castelo_negro;
 }
 
-Cenario monta_alem_da_muralha(Elemento *jon, Elemento *bran) {
-  Cenario sala2 = {
-    .linhas = 10,
-    .colunas = 10,
-    .etapa = ALEM_DA_MURALHA
-  };
-
-  Posicao posicao_portao = gera_posicao_na_borda(sala2);
-
-  Elemento portao = {
-    .tipo = PORTAO,
-    .posicao = posicao_portao
-  };
-  coloca_elemento_no_cenario(portao, &sala2);
-
-  jon->posicao = posicao_portao;
-  coloca_elemento_no_cenario(*jon, &sala2);
-
-  bran->tipo = BRAN;
-  bran->posicao = gera_posicao_aleatoria(sala2);
-
-  gera_elementos_no_cenario(ARVORE, QTD_ARVORES, &sala2);
-  gera_elementos_no_cenario(ROCHA, QTD_ROCHAS, &sala2);
-  gera_elementos_no_cenario(CABANA_SELVAGEM, QTD_CABANAS_SELVAGENS, &sala2);
-  gera_elementos_no_cenario(CAMINHANTE_BRANCO, QTD_CAMINHANTES_BRANCOS, &sala2);
-  gera_elementos_no_cenario(FOGUEIRA, QTD_FOGUEIRAS, &sala2);
-  gera_elementos_no_cenario(VIDRO_DRAGAO, QTD_VIDROS_DRAGAO, &sala2);
-
-  return sala2;
-}
-
-int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoElemento *elemento_alvo) {
-  Elemento elemento_antes = *elemento; // Esse asterisco permite que eu passe o conteúdo desse ponteiro pra essa minha variável
+int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, const TipoElemento **elemento_alvo) {
+  // Esse asterisco permite que eu passe o conteúdo desse ponteiro pra essa minha variável
+  Elemento elemento_antes = *elemento;
 
   switch (direcao) {
   case CIMA:
@@ -233,14 +235,14 @@ int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoEle
   *elemento_alvo = cenario->matriz[elemento->posicao.linha][elemento->posicao.coluna];
 
   // Compara se o conteúdo que esse ponteiro aponta é um obstáculo
-  if (eh_obstaculo(*elemento_alvo)) {
+  if (eh_obstaculo(**elemento_alvo)) {
     *elemento = elemento_antes;
     return 0;
   }
 
   // Salva o que havia na posição que o elemento está indo
   elemento->elemento_abaixo =
-    *elemento_alvo == PORTAO ? PORTAO : VAZIO;
+    **elemento_alvo == PORTAO ? *elemento_alvo : &TIPO_VAZIO;
 
   // Restaura o que havia abaixo dele
   cenario->matriz
@@ -251,7 +253,7 @@ int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoEle
 }
 
 void mover_jogador(Jogo *jogo) {
-  TipoElemento elemento_alvo = VAZIO;
+  const TipoElemento *elemento_alvo = &TIPO_VAZIO;
 
   int moveu = move_elemento(
     jogo->cenario_atual,
@@ -265,41 +267,39 @@ void mover_jogador(Jogo *jogo) {
   jogo->contexto.elemento_alvo = elemento_alvo;
 
   // Efetiva a movimentação
-  coloca_elemento_no_cenario(jogo->jon, jogo->cenario_atual);
+  coloca_elemento_no_cenario(&jogo->jon, jogo->cenario_atual);
 }
 
 void mover_bran(Jogo *jogo) {
   char comandos[] = {CIMA, ESQUERDA, BAIXO, DIREITA};
   int escolhe_comando = rand() % 4;
   Elemento bran_antes = jogo->bran;
-  TipoElemento elemento_alvo = VAZIO;
+  const TipoElemento *elemento_alvo = &TIPO_VAZIO;
 
   int moveu = move_elemento(jogo->cenario_atual, &jogo->bran, comandos[escolhe_comando], &elemento_alvo);
 
   if (!moveu) return;
-  if (elemento_alvo == CAMINHANTE_BRANCO) {
+  if (*elemento_alvo == CAMINHANTE_BRANCO) {
     // Se o bran andou pra cima de um caminhante branco, faz um rollback pra posicao original
     jogo->bran = bran_antes;
     return;
   }
 
   // Se não, efetiva a mudança
-  coloca_elemento_no_cenario(jogo->bran, jogo->cenario_atual);
+  coloca_elemento_no_cenario(&jogo->bran, jogo->cenario_atual);
 }
 
 void tenta_abrir_portao(Jogo *jogo) {
-  if (jogo->contexto.elemento_alvo != PORTAO) return;
+  if (*jogo->contexto.elemento_alvo != PORTAO) return;
 
   if (jogo->cenario_atual->etapa == CASTELO_NEGRO) {
     jogo->estado.determinacao = rand() % 101;
 
     if (jogo->estado.determinacao >= 70) {
-      jogo->alem_da_muralha = monta_alem_da_muralha(&jogo->jon, &jogo->bran);
       jogo->cenario_atual = &jogo->alem_da_muralha;
     } else {
       jogo->estado.vida -= 15;
     }
-
   } else if (jogo->cenario_atual->etapa == ALEM_DA_MURALHA) {
     jogo->cenario_atual = &jogo->castelo_negro;
   }
@@ -346,7 +346,7 @@ void recuperar_vida(EstadoJogo *estado) {
 }
 
 void aplicar_efeito_elemento(EstadoJogo *estado, ContextoAcao *contexto) {
-  switch (contexto->elemento_alvo) {
+  switch (*contexto->elemento_alvo) {
 
   case CAMINHANTE_BRANCO:
     combater_caminhante(estado, contexto);
@@ -399,8 +399,8 @@ void processa_a_rodada(Jogo *jogo) {
 int main() {
   srand(time(NULL));
 
-  Jogo jogo = inicia_o_jogo();
-  jogo.cenario_atual = &jogo.castelo_negro;
+  Jogo jogo = {0};
+  inicia_o_jogo(&jogo);
 
   imprime_cenario(jogo);
   while (!jogo.estado.fim) {

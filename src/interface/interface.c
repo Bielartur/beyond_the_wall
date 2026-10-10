@@ -12,8 +12,8 @@
 #define BRANCO "\033[97m"
 #define CINZA "\033[90m"
 
-const char *tipo_para_simbolo(TipoElemento tipo) {
-  switch (tipo) {
+const char *tipo_para_simbolo(const TipoElemento *tipo) {
+  switch (*tipo) {
   case VAZIO:
     return CINZA "·" RESET;
 
@@ -57,7 +57,7 @@ void limpar_terminal() {
 #endif
 }
 
-void imprime_linha(TipoElemento *linha, int tamanho) {
+void imprime_linha(const TipoElemento **linha, int tamanho) {
   printf("| ");
   for (int i = 0; i < tamanho; i++) {
     if (i != tamanho - 1) {
@@ -76,7 +76,7 @@ void imprime_cenario(Jogo jogo) {
 
   printf("Rodada %d | Vida: %d | Obsidiana: %d | Bran resgatado: %s\n", jogo.estado.rodada, jogo.estado.vida, jogo.estado.obsidiana, texto);
   printf("\n");
-  if (jogo.contexto.elemento_alvo == PORTAO) {
+  if (*jogo.contexto.elemento_alvo == PORTAO) {
     printf("Determinação: %d\n\n", jogo.estado.determinacao);
   } else if (jogo.contexto.dano_sofrido > 0) {
     printf(
@@ -90,7 +90,7 @@ void imprime_cenario(Jogo jogo) {
     printf("\n");
   }
   printf("\n");
-  if (jogo.contexto.elemento_alvo == PORTAO) {
+  if (*jogo.contexto.elemento_alvo == PORTAO) {
     printf("Abrir portão (%c)\n", ABRIR_PORTA);
   }
   printf("Mover-se (%c/%c/%c/%c):", CIMA, ESQUERDA, BAIXO, DIREITA);
