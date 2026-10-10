@@ -59,22 +59,22 @@ typedef struct {
 } EstadoJogo;
 
 typedef struct {
-    TipoElemento elemento_alvo;
-    Comando comando;
-    int dano_sofrido;
+  TipoElemento elemento_alvo;
+  Comando comando;
+  int dano_sofrido;
 } ContextoAcao;
 
 typedef struct {
-    EstadoJogo estado;
-    ContextoAcao contexto;
+  EstadoJogo estado;
+  ContextoAcao contexto;
 
-    Cenario castelo_negro;
-    Cenario alem_da_muralha;
+  Cenario castelo_negro;
+  Cenario alem_da_muralha;
 
-    Cenario *cenario_atual;
+  Cenario *cenario_atual;
 
-    Elemento jon;
-    Elemento bran;
+  Elemento jon;
+  Elemento bran;
 } Jogo;
 
 #endif

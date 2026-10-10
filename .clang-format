@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 0          # não quebra linhas longas
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AlignAfterOpenBracket: BlockIndent
+ContinuationIndentWidth: 2
+Cpp11BracedListStyle: FunctionCall
+BracedInitializerIndentWidth: 2
+BreakBeforeCloseBracketBracedList: true

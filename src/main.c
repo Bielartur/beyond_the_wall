@@ -1,6 +1,6 @@
-#include "./types/types.h"
-#include "./interface/interface.h"
 #include "./input/input.h"
+#include "./interface/interface.h"
+#include "./types/types.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -15,22 +15,22 @@
 
 int eh_obstaculo(TipoElemento tipo_elemento) {
   switch (tipo_elemento) {
-    case ARVORE:
-      return 1;
-    case ROCHA:
-      return 1;
-    case CABANA_SELVAGEM:
-      return 1;
-    
-    default:
-      return 0;
+  case ARVORE:
+    return 1;
+  case ROCHA:
+    return 1;
+  case CABANA_SELVAGEM:
+    return 1;
+
+  default:
+    return 0;
   }
 }
 
 int mede_distancia(Posicao posicao1, Posicao posicao2) {
   int distancia_em_linhas = abs(posicao1.linha - posicao2.linha);
   int distancia_em_colunas = abs(posicao1.coluna - posicao2.coluna);
-  
+
   return distancia_em_linhas + distancia_em_colunas;
 }
 
@@ -38,8 +38,8 @@ Posicao gera_posicao_aleatoria(Cenario cenario) {
   Posicao posicao = {0};
 
   do {
-    posicao.linha = (rand() % cenario.linhas); // Já exclui o último elemento, então vai estar sempre em um espaço válido
-    posicao.coluna = (rand() % cenario.colunas); // (se a entrada estiver correta) 
+    posicao.linha = (rand() % cenario.linhas);   // Já exclui o último elemento, então vai estar sempre em um espaço válido
+    posicao.coluna = (rand() % cenario.colunas); // (se a entrada estiver correta)
   } while (cenario.matriz[posicao.linha][posicao.coluna] != VAZIO); // Só retorna posições disponíveis
 
   return posicao;
@@ -80,7 +80,7 @@ void coloca_tipo_no_cenario(Posicao posicao, TipoElemento tipo, Cenario *cenario
 }
 
 void gera_elementos_no_cenario(TipoElemento tipo, int qtd_elementos, Cenario *cenario) {
-  for (int i=0; i < qtd_elementos; i++) {
+  for (int i = 0; i < qtd_elementos; i++) {
     Posicao posicao_aleatoria = gera_posicao_aleatoria(*cenario);
     coloca_tipo_no_cenario(posicao_aleatoria, tipo, cenario);
   }
@@ -109,7 +109,6 @@ int busca_posicoes_ao_redor(Cenario *cenario, Posicao centro, Posicao posicoes_d
 
         quantidade++;
       }
-
     }
   }
 
@@ -123,7 +122,7 @@ void gera_caminhantes_ao_redor(Cenario *cenario, Posicao centro, int qtd_caminha
   int quantidade = busca_posicoes_ao_redor(cenario, centro, posicoes_disponiveis);
   if (quantidade == 0) return;
 
-  for (int i=0; i < qtd_caminhantes; i++) {
+  for (int i = 0; i < qtd_caminhantes; i++) {
     int sorteio_posicao = rand() % quantidade;
     coloca_tipo_no_cenario(posicoes_disponiveis[sorteio_posicao], CAMINHANTE_BRANCO, cenario);
   }
@@ -179,7 +178,7 @@ Cenario monta_alem_da_muralha(Elemento *jon, Elemento *bran) {
   };
 
   Posicao posicao_portao = gera_posicao_na_borda(sala2);
-  
+
   Elemento portao = {
     .tipo = PORTAO,
     .posicao = posicao_portao
@@ -188,7 +187,7 @@ Cenario monta_alem_da_muralha(Elemento *jon, Elemento *bran) {
 
   jon->posicao = posicao_portao;
   coloca_elemento_no_cenario(*jon, &sala2);
-  
+
   bran->tipo = BRAN;
   bran->posicao = gera_posicao_aleatoria(sala2);
 
@@ -206,28 +205,28 @@ int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoEle
   Elemento elemento_antes = *elemento; // Esse asterisco permite que eu passe o conteúdo desse ponteiro pra essa minha variável
 
   switch (direcao) {
-    case CIMA:
-      if (elemento->posicao.linha == 0) return 0;
-      elemento->posicao.linha -= 1;
-      break;
+  case CIMA:
+    if (elemento->posicao.linha == 0) return 0;
+    elemento->posicao.linha -= 1;
+    break;
 
-    case BAIXO:
-      if (elemento->posicao.linha == cenario->linhas - 1) return 0; // linhas - 1 porque se tem 3 linhas o último indice é o 2
-      elemento->posicao.linha += 1;
-      break;
+  case BAIXO:
+    if (elemento->posicao.linha == cenario->linhas - 1) return 0; // linhas - 1 porque se tem 3 linhas o último indice é o 2
+    elemento->posicao.linha += 1;
+    break;
 
-    case ESQUERDA:
-      if (elemento->posicao.coluna == 0) return 0;
-      elemento->posicao.coluna -= 1;
-      break;
+  case ESQUERDA:
+    if (elemento->posicao.coluna == 0) return 0;
+    elemento->posicao.coluna -= 1;
+    break;
 
-    case DIREITA:
-      if (elemento->posicao.coluna == cenario->colunas - 1) return 0; // colunas - 1 porque se tem 3 colunas o último indice é o 2
-      elemento->posicao.coluna += 1;
-      break;
-    
-    default:
-      return 0;
+  case DIREITA:
+    if (elemento->posicao.coluna == cenario->colunas - 1) return 0; // colunas - 1 porque se tem 3 colunas o último indice é o 2
+    elemento->posicao.coluna += 1;
+    break;
+
+  default:
+    return 0;
   }
 
   // Guarda o conteúdo no elemento_alvo passado
@@ -235,8 +234,8 @@ int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoEle
 
   // Compara se o conteúdo que esse ponteiro aponta é um obstáculo
   if (eh_obstaculo(*elemento_alvo)) {
-      *elemento = elemento_antes;
-      return 0;
+    *elemento = elemento_antes;
+    return 0;
   }
 
   // Salva o que havia na posição que o elemento está indo
@@ -245,29 +244,28 @@ int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoEle
 
   // Restaura o que havia abaixo dele
   cenario->matriz
-      [elemento_antes.posicao.linha]
-      [elemento_antes.posicao.coluna]
-          = elemento_antes.elemento_abaixo;
-    
+    [elemento_antes.posicao.linha]
+    [elemento_antes.posicao.coluna] = elemento_antes.elemento_abaixo;
+
   return 1;
 }
 
 void mover_jogador(Jogo *jogo) {
   TipoElemento elemento_alvo = VAZIO;
 
-    int moveu = move_elemento(
-        jogo->cenario_atual,
-        &jogo->jon,
-        jogo->contexto.comando,
-        &elemento_alvo
-    );
+  int moveu = move_elemento(
+    jogo->cenario_atual,
+    &jogo->jon,
+    jogo->contexto.comando,
+    &elemento_alvo
+  );
 
-    if (!moveu) return;
-    // o elemento alvo foi preenchido dentro da função move_elemento
-    jogo->contexto.elemento_alvo = elemento_alvo;
+  if (!moveu) return;
+  // o elemento alvo foi preenchido dentro da função move_elemento
+  jogo->contexto.elemento_alvo = elemento_alvo;
 
-    // Efetiva a movimentação
-    coloca_elemento_no_cenario(jogo->jon, jogo->cenario_atual);
+  // Efetiva a movimentação
+  coloca_elemento_no_cenario(jogo->jon, jogo->cenario_atual);
 }
 
 void mover_bran(Jogo *jogo) {
@@ -284,7 +282,7 @@ void mover_bran(Jogo *jogo) {
     jogo->bran = bran_antes;
     return;
   }
-    
+
   // Se não, efetiva a mudança
   coloca_elemento_no_cenario(jogo->bran, jogo->cenario_atual);
 }
@@ -296,8 +294,8 @@ void tenta_abrir_portao(Jogo *jogo) {
     jogo->estado.determinacao = rand() % 101;
 
     if (jogo->estado.determinacao >= 70) {
-        jogo->alem_da_muralha = monta_alem_da_muralha(&jogo->jon, &jogo->bran);
-        jogo->cenario_atual = &jogo->alem_da_muralha;
+      jogo->alem_da_muralha = monta_alem_da_muralha(&jogo->jon, &jogo->bran);
+      jogo->cenario_atual = &jogo->alem_da_muralha;
     } else {
       jogo->estado.vida -= 15;
     }
@@ -310,19 +308,19 @@ void tenta_abrir_portao(Jogo *jogo) {
 void lidar_comando(Jogo *jogo) {
 
   switch (jogo->contexto.comando) {
-    case CIMA:
-    case BAIXO:
-    case ESQUERDA:
-    case DIREITA:
-      mover_jogador(jogo);
-      break;
+  case CIMA:
+  case BAIXO:
+  case ESQUERDA:
+  case DIREITA:
+    mover_jogador(jogo);
+    break;
 
-    case ABRIR_PORTA: 
-      tenta_abrir_portao(jogo);
-      break;
-  
-    default:
-      break;
+  case ABRIR_PORTA:
+    tenta_abrir_portao(jogo);
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -350,20 +348,20 @@ void recuperar_vida(EstadoJogo *estado) {
 void aplicar_efeito_elemento(EstadoJogo *estado, ContextoAcao *contexto) {
   switch (contexto->elemento_alvo) {
 
-    case CAMINHANTE_BRANCO:
-      combater_caminhante(estado, contexto);
-      return;
+  case CAMINHANTE_BRANCO:
+    combater_caminhante(estado, contexto);
+    return;
 
-    case VIDRO_DRAGAO:
-      estado->obsidiana += 1;
-      return;
+  case VIDRO_DRAGAO:
+    estado->obsidiana += 1;
+    return;
 
-    case FOGUEIRA:
-      recuperar_vida(estado);
-      return;
-    
-    default:
-      break;;
+  case FOGUEIRA:
+    recuperar_vida(estado);
+    return;
+
+  default:
+    break;
   }
 
   contexto->dano_sofrido = 0;
@@ -377,9 +375,9 @@ void processa_a_rodada(Jogo *jogo) {
 
     int distancia_bran_jon = mede_distancia(jogo->bran.posicao, jogo->jon.posicao);
     if (distancia_bran_jon == 0) {
-        jogo->estado.tem_bran = 1;
+      jogo->estado.tem_bran = 1;
     }
-    
+
     if (!jogo->estado.tem_bran) mover_bran(jogo);
 
     if (distancia_bran_jon < 4 && distancia_bran_jon < jogo->estado.distancia_anterior) {
@@ -397,7 +395,6 @@ void processa_a_rodada(Jogo *jogo) {
     jogo->estado.fim = 1;
   }
 }
-
 
 int main() {
   srand(time(NULL));

@@ -1,65 +1,65 @@
+#include "interface.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "interface.h"
 
-#define RESET   "\033[0m"
+#define RESET "\033[0m"
 #define VERMELHO "\033[31m"
-#define VERDE    "\033[32m"
-#define AMARELO  "\033[33m"
-#define AZUL     "\033[34m"
-#define MAGENTA  "\033[35m"
-#define CIANO    "\033[36m"
-#define BRANCO   "\033[97m"
-#define CINZA    "\033[90m"
+#define VERDE "\033[32m"
+#define AMARELO "\033[33m"
+#define AZUL "\033[34m"
+#define MAGENTA "\033[35m"
+#define CIANO "\033[36m"
+#define BRANCO "\033[97m"
+#define CINZA "\033[90m"
 
 const char *tipo_para_simbolo(TipoElemento tipo) {
   switch (tipo) {
-    case VAZIO:
-      return CINZA "·" RESET;
+  case VAZIO:
+    return CINZA "·" RESET;
 
-    case JOGADOR:
-      return AZUL "♞" RESET;
+  case JOGADOR:
+    return AZUL "♞" RESET;
 
-    case BRAN:
-      return CIANO "♟" RESET;
+  case BRAN:
+    return CIANO "♟" RESET;
 
-    case PORTAO:
-      return AMARELO "▣" RESET;
+  case PORTAO:
+    return AMARELO "▣" RESET;
 
-    case ARVORE:
-      return VERDE "♣" RESET;
+  case ARVORE:
+    return VERDE "♣" RESET;
 
-    case ROCHA:
-      return CINZA "◆" RESET;
+  case ROCHA:
+    return CINZA "◆" RESET;
 
-    case CABANA_SELVAGEM:
-      return AMARELO "⌂" RESET;
+  case CABANA_SELVAGEM:
+    return AMARELO "⌂" RESET;
 
-    case VIDRO_DRAGAO:
-      return MAGENTA "♦" RESET;
+  case VIDRO_DRAGAO:
+    return MAGENTA "♦" RESET;
 
-    case FOGUEIRA:
-      return VERMELHO "♨" RESET;
+  case FOGUEIRA:
+    return VERMELHO "♨" RESET;
 
-    case CAMINHANTE_BRANCO:
-      return CINZA "." RESET;
+  case CAMINHANTE_BRANCO:
+    return CINZA "." RESET;
 
-    default:
-      return "?";
+  default:
+    return "?";
   }
 }
 
 void limpar_terminal() {
-  #ifdef _WIN32
-    system("cls");
-  #else
-      system("clear");
-  #endif
+#ifdef _WIN32
+  system("cls");
+#else
+  system("clear");
+#endif
 }
 
-void imprime_linha(TipoElemento* linha, int tamanho) {
+void imprime_linha(TipoElemento *linha, int tamanho) {
   printf("| ");
-  for (int i=0; i < tamanho; i++) {
+  for (int i = 0; i < tamanho; i++) {
     if (i != tamanho - 1) {
       printf("%s  ", tipo_para_simbolo(linha[i]));
     } else {
@@ -80,12 +80,12 @@ void imprime_cenario(Jogo jogo) {
     printf("Determinação: %d\n\n", jogo.estado.determinacao);
   } else if (jogo.contexto.dano_sofrido > 0) {
     printf(
-        VERMELHO "Dano sofrido: -%d" RESET "\n",
-        jogo.contexto.dano_sofrido
+      VERMELHO "Dano sofrido: -%d" RESET "\n",
+      jogo.contexto.dano_sofrido
     );
   }
 
-  for (int i=0; i < jogo.cenario_atual->linhas; i++) {
+  for (int i = 0; i < jogo.cenario_atual->linhas; i++) {
     imprime_linha(jogo.cenario_atual->matriz[i], jogo.cenario_atual->colunas);
     printf("\n");
   }
