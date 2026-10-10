@@ -98,20 +98,20 @@ void imprime_cenario(Jogo jogo) {
 
 void imprimir_fim_jogo(int venceu) {
   if (venceu) {
-    printf("\n\n==============================\n");
-    printf("          VITORIA!\n");
-    printf("==============================\n");
-    printf("Jon Snow conseguiu resgatar Bran\n");
-    printf("e sobreviver aos perigos alem da Muralha!\n");
-    printf("\nParabens, voce venceu!\n");
-    printf("==============================\n\n");
+    printf(VERDE "\n\n==============================\n" RESET);
+    printf(AMARELO "          VITORIA!\n" RESET);
+    printf(VERDE "==============================\n" RESET);
+    printf(BRANCO "Jon Snow conseguiu resgatar " CIANO "Bran\n" RESET);
+    printf(BRANCO "e sobreviver aos perigos alem da Muralha!\n" RESET);
+    printf(AMARELO "\nParabens, voce venceu!\n" RESET);
+    printf(VERDE "==============================\n\n" RESET);
   } else {
-    printf("\n\n==============================\n");
-    printf("         GAME OVER\n");
-    printf("==============================\n");
-    printf("Jon Snow nao resistiu aos perigos\n");
-    printf("alem da Muralha.\n");
-    printf("\nA Patrulha da Noite perdeu um de seus irmaos...\n");
-    printf("==============================\n\n");
+    printf(VERMELHO "\n\n==============================\n" RESET);
+    printf(VERMELHO "         GAME OVER\n" RESET);
+    printf(VERMELHO "==============================\n" RESET);
+    printf(BRANCO "Jon Snow nao resistiu aos perigos\n" RESET);
+    printf(BRANCO "alem da Muralha.\n" RESET);
+    printf(CINZA "\nA Patrulha da Noite perdeu um de seus irmaos...\n" RESET);
+    printf(VERMELHO "==============================\n\n" RESET);
   }
 }
