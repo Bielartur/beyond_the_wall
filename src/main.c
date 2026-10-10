@@ -1,212 +1,17 @@
-#include <stdio.h>
+#include "./types/types.h"
+#include "./interface/interface.h"
+#include "./input/input.h"
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_COLUNAS 10
+// Configurações globais do jogo
 #define VIDA_INICIAL 100
-#define TAM_MAX 10
 #define QTD_ARVORES 8
 #define QTD_ROCHAS 6
 #define QTD_CABANAS_SELVAGENS 4
 #define QTD_CAMINHANTES_BRANCOS 5
 #define QTD_FOGUEIRAS 8
 #define QTD_VIDROS_DRAGAO 4
-
-
-typedef enum {
-  VAZIO,
-  JOGADOR,
-  BRAN,
-  PORTAO,
-  ARVORE,
-  ROCHA,
-  CABANA_SELVAGEM,
-  FOGUEIRA,
-  VIDRO_DRAGAO,
-  CAMINHANTE_BRANCO,
-} TipoElemento;
-
-typedef enum {
-  CIMA = 'w',
-  BAIXO = 's',
-  DIREITA = 'd',
-  ESQUERDA = 'a',
-  ABRIR_PORTA = 'f'
-} Comando;
-
-typedef struct {
-  int linha;
-  int coluna;
-} Posicao;
-
-typedef struct {
-  Posicao posicao;
-  TipoElemento tipo;
-  TipoElemento elemento_abaixo;
-} Elemento;
-
-typedef enum {
-  CASTELO_NEGRO,
-  ALEM_DA_MURALHA
-} Etapa;
-
-typedef struct {
-  int linhas;
-  int colunas;
-  Etapa etapa;
-  TipoElemento matriz[TAM_MAX][TAM_MAX];
-} Cenario;
-
-typedef struct {
-  int rodada;
-  int distancia_anterior;
-  int tem_bran;
-  int vida;
-  int determinacao;
-  int obsidiana;
-  int venceu;
-  int fim;
-} EstadoJogo;
-
-typedef struct {
-    TipoElemento elemento_alvo;
-    Comando comando;
-    int dano_sofrido;
-} ContextoAcao;
-
-typedef struct {
-    EstadoJogo estado;
-    ContextoAcao contexto;
-
-    Cenario castelo_negro;
-    Cenario alem_da_muralha;
-
-    Cenario *cenario_atual;
-
-    Elemento jon;
-    Elemento bran;
-} Jogo;
-
-#ifdef _WIN32
-    #include <conio.h>
-    
-    int capturar_tecla(void) {
-        return getch();
-    }
-#else
-    #include <stdio.h>
-    #include <termios.h>
-    #include <unistd.h>
-    
-    int capturar_tecla(void) {
-        struct termios oldt, newt;
-        int ch;
-        // Pega as configurações atuais do terminal
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        // Desativa o modo canônico (Buffer de linha) e o Eco
-        newt.c_lflag &= ~(ICANON | ECHO);
-        // Aplica as novas configurações imediatamente
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        
-        ch = getchar();
-        
-        // Restaura as configurações originais do terminal
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return ch;
-    }
-#endif
-
-#define RESET   "\033[0m"
-#define VERMELHO "\033[31m"
-#define VERDE    "\033[32m"
-#define AMARELO  "\033[33m"
-#define AZUL     "\033[34m"
-#define MAGENTA  "\033[35m"
-#define CIANO    "\033[36m"
-#define BRANCO   "\033[97m"
-#define CINZA    "\033[90m"
-
-const char *tipo_para_simbolo(TipoElemento tipo) {
-  switch (tipo) {
-    case VAZIO:
-      return CINZA "·" RESET;
-
-    case JOGADOR:
-      return AZUL "♞" RESET;
-
-    case BRAN:
-      return CIANO "♟" RESET;
-
-    case PORTAO:
-      return AMARELO "▣" RESET;
-
-    case ARVORE:
-      return VERDE "♣" RESET;
-
-    case ROCHA:
-      return CINZA "◆" RESET;
-
-    case CABANA_SELVAGEM:
-      return AMARELO "⌂" RESET;
-
-    case VIDRO_DRAGAO:
-      return MAGENTA "♦" RESET;
-
-    case FOGUEIRA:
-      return VERMELHO "♨" RESET;
-
-    case CAMINHANTE_BRANCO:
-      return CINZA "." RESET;
-
-    default:
-      return "?";
-  }
-}
-
-void imprime_linha(TipoElemento* linha, int tamanho) {
-  printf("| ");
-  for (int i=0; i < tamanho; i++) {
-    if (i != tamanho - 1) {
-      printf("%s  ", tipo_para_simbolo(linha[i]));
-    } else {
-      printf("%s", tipo_para_simbolo(linha[i]));
-    }
-  }
-  printf(" |");
-}
-
-void imprime_cenario(Jogo jogo) {
-  char *texto; // Aponta para o array de caracteres
-  texto = jogo.estado.tem_bran ? "Sim" : "Não";
-
-  #ifdef _WIN32
-    system("cls");
-  #else
-      system("clear");
-  #endif
-
-  printf("Rodada %d | Vida: %d | Obsidiana: %d | Bran resgatado: %s\n", jogo.estado.rodada, jogo.estado.vida, jogo.estado.obsidiana, texto);
-  printf("\n");
-  if (jogo.contexto.elemento_alvo == PORTAO) {
-    printf("Determinação: %d\n\n", jogo.estado.determinacao);
-  } else if (jogo.contexto.dano_sofrido > 0) {
-    printf(
-        VERMELHO "Dano sofrido: -%d" RESET "\n",
-        jogo.contexto.dano_sofrido
-    );
-  }
-
-  for (int i=0; i < jogo.cenario_atual->linhas; i++) {
-    imprime_linha(jogo.cenario_atual->matriz[i], jogo.cenario_atual->colunas);
-    printf("\n");
-  }
-  printf("\n");
-  if (jogo.contexto.elemento_alvo == PORTAO) {
-    printf("Abrir portão (%c)\n", ABRIR_PORTA);
-  }
-  printf("Mover-se (%c/%c/%c/%c):", CIMA, ESQUERDA, BAIXO, DIREITA);
-}
 
 int eh_obstaculo(TipoElemento tipo_elemento) {
   switch (tipo_elemento) {
@@ -611,23 +416,7 @@ int main() {
     imprime_cenario(jogo);
   }
 
-  if (jogo.estado.venceu) {
-      printf("\n\n==============================\n");
-      printf("          VITORIA!\n");
-      printf("==============================\n");
-      printf("Jon Snow conseguiu resgatar Bran\n");
-      printf("e sobreviver aos perigos alem da Muralha!\n");
-      printf("\nParabens, voce venceu!\n");
-      printf("==============================\n\n");
-  } else {
-      printf("\n\n==============================\n");
-      printf("         GAME OVER\n");
-      printf("==============================\n");
-      printf("Jon Snow nao resistiu aos perigos\n");
-      printf("alem da Muralha.\n");
-      printf("\nA Patrulha da Noite perdeu um de seus irmaos...\n");
-      printf("==============================\n\n");
-  }
+  imprimir_fim_jogo(jogo.estado.venceu);
 
   return 0;
 }
