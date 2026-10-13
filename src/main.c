@@ -302,20 +302,35 @@ void mover_bran(Jogo *jogo) {
   coloca_elemento_no_cenario(&jogo->bran, jogo->cenario_atual);
 }
 
+int troca_de_cenario(Jogo *jogo, Portao portao) {
+  jogo->cenario_atual = portao.vai_para;
+
+  // o portão 0 sempre será o portão de entrada
+  Portao portao_alvo = jogo->cenario_atual->portoes[0];
+  jogo->jon.posicao = portao_alvo.posicao;
+  coloca_elemento_no_cenario(&jogo->jon, jogo->cenario_atual);
+
+  return EXIT_SUCCESS;
+}
+
 void tenta_abrir_portao(Jogo *jogo) {
-  if (*jogo->contexto.elemento_alvo != PORTAO) return;
+  if (jogo->contexto.elemento_alvo != PORTAO) return;
+  Portao *ponteiro_portao = busca_portao_por_posicao(jogo->jon.posicao, jogo->cenario_atual);
+
+  if (ponteiro_portao == NULL) return;
+  Portao portao_atual = *ponteiro_portao;
 
   if (jogo->cenario_atual->etapa == CASTELO_NEGRO) {
     jogo->estado.determinacao = rand() % 101;
 
     if (jogo->estado.determinacao >= 70) {
-      jogo->cenario_atual = &jogo->alem_da_muralha;
+      troca_de_cenario(jogo, portao_atual);
+      return;
     } else {
       jogo->estado.vida -= 15;
     }
-  } else if (jogo->cenario_atual->etapa == ALEM_DA_MURALHA) {
-    jogo->cenario_atual = &jogo->castelo_negro;
   }
+  troca_de_cenario(jogo, portao_atual);
 }
 
 void lidar_comando(Jogo *jogo) {
