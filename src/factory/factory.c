@@ -8,27 +8,21 @@ Cenario cria_cenario(int linhas, int colunas, Etapa etapa) {
     .etapa = etapa,
   };
 
-  // Preenche com os ponteiros para o tipo vazio
+  // Preenche com o tipo vazio
   for (int i = 0; i < cenario.linhas; i++) {
     for (int j = 0; j < cenario.colunas; j++) {
-      cenario.matriz[i][j] = &TIPO_VAZIO;
+      cenario.matriz[i][j] = VAZIO;
     }
   }
 
   return cenario;
 }
 
-Elemento cria_elemento(TipoElemento tipo, Posicao *posicao) {
-  Posicao posicao_real = {0};
-
-  if (posicao != NULL) {
-    posicao_real = *posicao;
-  }
-
+Elemento cria_elemento(TipoElemento tipo, Posicao posicao) {
   Elemento elemento = {
     .tipo = tipo,
-    .posicao = posicao_real,
-    .elemento_abaixo = &TIPO_VAZIO,
+    .posicao = posicao,
+    .elemento_abaixo = VAZIO,
   };
 
   return elemento;

@@ -16,18 +16,6 @@ typedef enum {
   CAMINHANTE_BRANCO,
 } TipoElemento;
 
-// Variáveis globais
-extern const TipoElemento TIPO_VAZIO;
-extern const TipoElemento TIPO_JOGADOR;
-extern const TipoElemento TIPO_BRAN;
-extern const TipoElemento TIPO_PORTAO;
-extern const TipoElemento TIPO_ARVORE;
-extern const TipoElemento TIPO_ROCHA;
-extern const TipoElemento TIPO_CABANA_SELVAGEM;
-extern const TipoElemento TIPO_FOGUEIRA;
-extern const TipoElemento TIPO_VIDRO_DRAGAO;
-extern const TipoElemento TIPO_CAMINHANTE_BRANCO;
-
 typedef enum {
   CIMA = 'w',
   BAIXO = 's',
@@ -42,27 +30,32 @@ typedef enum {
 } Etapa;
 
 typedef struct {
-  int linhas;
-  int colunas;
-  Etapa etapa;
-  const TipoElemento *matriz[TAM_MAX][TAM_MAX];
-} Cenario;
-
-typedef struct {
   int linha;
   int coluna;
 } Posicao;
 
+typedef struct Cenario Cenario;
+
 typedef struct {
-  const TipoElemento tipo; // deve ser constante do tipo PORTAO
-  const Posicao posicao;   // Portão não se mexe também
-  const Cenario *vai_para; // Um portão leva sempre pra o mesmo lugar
+  TipoElemento tipo; // deve ser constante do tipo PORTAO
+  Posicao posicao;   // Portão não se mexe também
+  Cenario *vai_para; // Um portão leva sempre pra o mesmo lugar
 } Portao;
+
+struct Cenario {
+  int linhas;
+  int colunas;
+  Etapa etapa;
+  Portao portoes[5]; // até 5 portões pra evitar problema de faltar espaço
+  int qtd_portoes_colocados;
+
+  TipoElemento matriz[TAM_MAX][TAM_MAX];
+};
 
 typedef struct {
   TipoElemento tipo;
   Posicao posicao;
-  const TipoElemento *elemento_abaixo;
+  TipoElemento elemento_abaixo;
 } Elemento;
 
 typedef struct {
@@ -78,7 +71,7 @@ typedef struct {
 
 // O contexto ação ele carrega as informações de uma rodada específica
 typedef struct {
-  TipoElemento *elemento_alvo;
+  TipoElemento elemento_alvo;
   Comando comando;
   int dano_sofrido;
 } ContextoAcao;
@@ -95,4 +88,7 @@ typedef struct {
   Elemento jon;
   Elemento bran;
 } Jogo;
+
+const Portao *tipo_para_portao(const TipoElemento *tipo);
+
 #endif
