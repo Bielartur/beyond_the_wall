@@ -28,12 +28,14 @@ Elemento cria_elemento(TipoElemento tipo, Posicao posicao) {
   return elemento;
 }
 
-Portao cria_portao(Posicao posicao, Cenario *vai_para) {
+Portao cria_portao(Posicao posicao, Destino *destino) {
   Portao portao = {
     .tipo = PORTAO,
     .posicao = posicao,
-    .vai_para = vai_para,
   };
+  if (destino) {
+    portao.destino = *destino;
+  }
 
   return portao;
 }

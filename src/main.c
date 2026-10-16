@@ -3,7 +3,7 @@
 #include "./factory/factory.h"
 #include "./types/types.h"
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <time.h>
 
 // Configurações globais do jogo
@@ -135,46 +135,139 @@ void gera_caminhantes_ao_redor(Cenario *cenario, Posicao centro, int qtd_caminha
 
 int coloca_portao_no_cenario(Portao portao, Cenario *cenario) {
   // retorna se já tem um portão nessa posição
-  if (cenario->portoes[cenario->qtd_portoes_colocados].tipo == PORTAO) return EXIT_FAILURE;
-  cenario->portoes[cenario->qtd_portoes_colocados] = portao;
-  cenario->qtd_portoes_colocados += 1;
+  if (cenario->portoes[portao.direcao].tipo == PORTAO) return EXIT_FAILURE;
+  cenario->portoes[portao.direcao] = portao;
 
   cenario->matriz[portao.posicao.linha][portao.posicao.coluna] = PORTAO;
   return EXIT_SUCCESS;
 }
 
+DirecoesPortao obtem_direcoes_disponiveis(Etapa etapa) {
+  DirecoesPortao direcoes_disponiveis = {
+    .ida = true,
+    .volta = true
+  };
+
+  if (etapa == 0) {
+    direcoes_disponiveis.volta = false;
+  }
+
+  if (etapa == QTD_ETAPAS - 1) {
+    direcoes_disponiveis.ida = false;
+  }
+
+  return direcoes_disponiveis;
+}
+
+int tem_direcao_disponivel(Etapa etapa, Direcao direcao) {
+  DirecoesPortao direcoes_disponiveis = obtem_direcoes_disponiveis(etapa);
+
+  if (direcao == IDA && direcoes_disponiveis.ida) return true;
+  if (direcao == VOLTA && direcoes_disponiveis.volta) return true;
+
+  return false;
+}
+
 Portao *busca_portao_por_posicao(Posicao posicao, Cenario *cenario) {
-  for (int i = 0; i < cenario->qtd_portoes_colocados; i++) {
-    int tem_mesma_linha = cenario->portoes[i].posicao.linha == posicao.linha;
-    int tem_mesma_coluna = cenario->portoes[i].posicao.coluna == posicao.coluna;
+  for (int direcao = 0; direcao < MAX_PORTOES; direcao++) {
+    if (!tem_direcao_disponivel(cenario->etapa, direcao)) continue;
+
+    int tem_mesma_linha = cenario->portoes[direcao].posicao.linha == posicao.linha;
+    int tem_mesma_coluna = cenario->portoes[direcao].posicao.coluna == posicao.coluna;
 
     if (tem_mesma_linha && tem_mesma_coluna) {
-      return &cenario->portoes[i];
+      return &cenario->portoes[direcao];
     }
   }
 
   return NULL;
 }
 
+int cria_castelo_negro(Jogo *jogo) {
+  // Cria a primeira sala
+  jogo->cenarios[CASTELO_NEGRO] = cria_cenario(3, 3, CASTELO_NEGRO);
+
+  // Cria o elemento que representa Jon
+  Elemento jon = cria_elemento(JOGADOR, gera_posicao_aleatoria(jogo->cenarios[CASTELO_NEGRO]));
+
+  jogo->jon = jon;
+  coloca_elemento_no_cenario(&jogo->jon, &jogo->cenarios[CASTELO_NEGRO]);
+
+  return EXIT_SUCCESS;
+}
+
 int cria_alem_da_muralha(Jogo *jogo) {
-  jogo->alem_da_muralha = cria_cenario(10, 10, ALEM_DA_MURALHA);
-  Posicao posicao_portao = gera_posicao_na_borda(jogo->alem_da_muralha);
-
-  // O destino será definido na main, após o cenário estar em seu endereço definitivo.
-  Portao portao = cria_portao(posicao_portao, &jogo->castelo_negro);
-  coloca_portao_no_cenario(portao, &jogo->alem_da_muralha);
-
-  // jon->posicao = posicao_portao;
-  // coloca_elemento_no_cenario(*jon, &alem_da_muralha);
-  Elemento bran = cria_elemento(BRAN, gera_posicao_aleatoria(jogo->alem_da_muralha));
+  jogo->cenarios[ALEM_DA_MURALHA] = cria_cenario(10, 10, ALEM_DA_MURALHA);
+  Elemento bran = cria_elemento(BRAN, gera_posicao_aleatoria(jogo->cenarios[ALEM_DA_MURALHA]));
   jogo->bran = bran;
 
-  distribui_tipos_no_cenario(ARVORE, QTD_ARVORES, &jogo->alem_da_muralha);
-  distribui_tipos_no_cenario(ROCHA, QTD_ROCHAS, &jogo->alem_da_muralha);
-  distribui_tipos_no_cenario(CABANA_SELVAGEM, QTD_CABANAS_SELVAGENS, &jogo->alem_da_muralha);
-  distribui_tipos_no_cenario(CAMINHANTE_BRANCO, QTD_CAMINHANTES_BRANCOS, &jogo->alem_da_muralha);
-  distribui_tipos_no_cenario(FOGUEIRA, QTD_FOGUEIRAS, &jogo->alem_da_muralha);
-  distribui_tipos_no_cenario(VIDRO_DRAGAO, QTD_VIDROS_DRAGAO, &jogo->alem_da_muralha);
+  distribui_tipos_no_cenario(ARVORE, QTD_ARVORES, &jogo->cenarios[ALEM_DA_MURALHA]);
+  distribui_tipos_no_cenario(ROCHA, QTD_ROCHAS, &jogo->cenarios[ALEM_DA_MURALHA]);
+  distribui_tipos_no_cenario(CABANA_SELVAGEM, QTD_CABANAS_SELVAGENS, &jogo->cenarios[ALEM_DA_MURALHA]);
+  distribui_tipos_no_cenario(CAMINHANTE_BRANCO, QTD_CAMINHANTES_BRANCOS, &jogo->cenarios[ALEM_DA_MURALHA]);
+  distribui_tipos_no_cenario(FOGUEIRA, QTD_FOGUEIRAS, &jogo->cenarios[ALEM_DA_MURALHA]);
+  distribui_tipos_no_cenario(VIDRO_DRAGAO, QTD_VIDROS_DRAGAO, &jogo->cenarios[ALEM_DA_MURALHA]);
+
+  return EXIT_SUCCESS;
+}
+
+int cria_fortaleza_congelada(Jogo *jogo) {
+  jogo->cenarios[FORTALEZA_CONGELADA] = cria_cenario(10, 10, FORTALEZA_CONGELADA);
+  return EXIT_SUCCESS;
+}
+
+int cria_todos_portoes(Cenario cenarios[]) {
+  Portao portoes[QTD_ETAPAS][MAX_PORTOES] = {0};
+
+  for (int etapa_atual = 0; etapa_atual < QTD_ETAPAS - 1; etapa_atual++) {
+    Posicao posicao = {0};
+    posicao = etapa_atual == 0 ? gera_posicao_aleatoria(cenarios[etapa_atual]) : gera_posicao_na_borda(cenarios[etapa_atual]);
+
+    for (int direcao = 0; direcao < MAX_PORTOES; direcao++) {
+      if (!tem_direcao_disponivel(etapa_atual, direcao)) continue;
+
+      portoes[etapa_atual][direcao] = cria_portao(posicao, NULL);
+      Portao portao_criado = portoes[etapa_atual][direcao];
+
+      coloca_portao_no_cenario(portao_criado, &cenarios[etapa_atual]);
+    }
+  }
+
+  return EXIT_SUCCESS;
+}
+
+int conecta_os_cenarios(Cenario cenarios[]) {
+  for (int etapa_atual = 0; etapa_atual < QTD_ETAPAS; etapa_atual++) {
+    DirecoesPortao direcoes_disponiveis = obtem_direcoes_disponiveis(etapa_atual);
+
+    for (int direcao = 0; direcao < MAX_PORTOES; direcao++) {
+      Etapa proxima_etapa = etapa_atual + 1;
+      Etapa etapa_anterior = etapa_atual - 1;
+      
+      if (direcao == IDA && direcoes_disponiveis.ida) {
+        // Ao avançar eu vou para o portão da posição VOLTA do próximo cenário
+        Portao portao_ida = cenarios[proxima_etapa].portoes[VOLTA];
+
+        Destino destino = {
+          .posicao = portao_ida.posicao,
+          .vai_para = &cenarios[proxima_etapa]
+        };
+        // Atualiza o registro do portão no cenário
+        cenarios[etapa_atual].portoes[IDA].destino = destino;
+
+      } else if (direcao == VOLTA && direcoes_disponiveis.volta) {
+        // Ao voltar eu volto para o portão da posição IDA do cenário anterior
+        Portao portao_volta = cenarios[etapa_anterior].portoes[IDA];
+
+        Destino destino = {
+          .posicao = portao_volta.posicao,
+          .vai_para = &cenarios[etapa_anterior]
+        };
+        // Atualiza o registro do portão no cenário
+        cenarios[etapa_atual].portoes[VOLTA].destino = destino;
+      }
+    }
+  }
 
   return EXIT_SUCCESS;
 }
@@ -198,21 +291,17 @@ void inicia_o_jogo(Jogo *jogo) {
   };
   jogo->contexto = contexto;
 
-  // Cria a primeira sala
-  jogo->castelo_negro = cria_cenario(3, 3, CASTELO_NEGRO);
-
-  // Cria o elemento que representa Jon
-  Elemento jon = cria_elemento(JOGADOR, gera_posicao_aleatoria(jogo->castelo_negro));
-
-  Portao portao1 = cria_portao(gera_posicao_aleatoria(jogo->castelo_negro), &jogo->alem_da_muralha);
-  coloca_portao_no_cenario(portao1, &jogo->castelo_negro);
-  
-  jogo->jon = jon;
-  
-  coloca_elemento_no_cenario(&jogo->jon, &jogo->castelo_negro);
-
+  cria_castelo_negro(jogo);
   cria_alem_da_muralha(jogo);
-  jogo->cenario_atual = &jogo->castelo_negro;
+  cria_fortaleza_congelada(jogo);
+
+  // Envia todos os cenários para preencher com seus portões
+  cria_todos_portoes(jogo->cenarios);
+
+  // Interliga os portões
+  conecta_os_cenarios(jogo->cenarios);
+
+  jogo->cenario_atual = &jogo->cenarios[CASTELO_NEGRO];
 }
 
 int move_elemento(Cenario *cenario, Elemento *elemento, Comando direcao, TipoElemento *elemento_alvo) {
@@ -303,10 +392,14 @@ void mover_bran(Jogo *jogo) {
 }
 
 int troca_de_cenario(Jogo *jogo, Portao portao) {
-  jogo->cenario_atual = portao.vai_para;
+  jogo->cenario_atual = portao.destino.vai_para;
 
   // o portão 0 sempre será o portão de entrada
-  Portao portao_alvo = jogo->cenario_atual->portoes[0];
+  Portao *ponteiro_portao_alvo = busca_portao_por_posicao(portao.destino.posicao, jogo->cenario_atual);
+  if (ponteiro_portao_alvo == NULL) return EXIT_FAILURE;
+
+  Portao portao_alvo = *ponteiro_portao_alvo;
+
   jogo->jon.posicao = portao_alvo.posicao;
   coloca_elemento_no_cenario(&jogo->jon, jogo->cenario_atual);
 
@@ -415,7 +508,7 @@ void processa_a_rodada(Jogo *jogo) {
     jogo->estado.distancia_anterior = distancia_bran_jon;
   }
 
-  if (jogo->cenario_atual == &jogo->castelo_negro && jogo->estado.tem_bran) {
+  if (jogo->cenario_atual == &jogo->cenarios[CASTELO_NEGRO] && jogo->estado.tem_bran) {
     jogo->estado.venceu = 1;
   }
 

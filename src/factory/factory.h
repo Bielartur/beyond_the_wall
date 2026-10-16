@@ -7,6 +7,6 @@ Cenario cria_cenario(int linhas, int colunas, Etapa etapa);
 
 Elemento cria_elemento(TipoElemento tipo, Posicao posicao);
 
-Portao cria_portao(Posicao posicao, Cenario *vai_para);
+Portao cria_portao(Posicao posicao, Destino *destino);
 
 #endif
