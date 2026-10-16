@@ -8,13 +8,6 @@ Cenario cria_cenario(int linhas, int colunas, Etapa etapa) {
     .etapa = etapa,
   };
 
-  // Preenche com o tipo vazio
-  for (int i = 0; i < cenario.linhas; i++) {
-    for (int j = 0; j < cenario.colunas; j++) {
-      cenario.matriz[i][j] = VAZIO;
-    }
-  }
-
   return cenario;
 }
 
